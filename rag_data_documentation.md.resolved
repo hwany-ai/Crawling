@@ -1,0 +1,73 @@
+# Hair Trend RAG: 데이터 파이프라인 및 아키텍처 문서
+
+이 문서는 2026(현재) 시즌 헤어 트렌드 분석을 위해 RAG(Retrieval-Augmented Generation) 시스템에 주입되는 **데이터의 선정 이유, 출처, 그리고 LLM을 이용한 정제(Schema) 구조**를 상세히 기록한 명세서입니다.
+
+---
+
+## 1. 데이터 소스(출처) 카테고리 및 선정 이유
+
+RAG 모델이 사용자에게 "요즘 유행하는 헤어스타일"뿐만 아니라 "구체적인 전문가적 조언"까지 제공할 수 있도록, 두 가지 성격의 글로벌 매거진 데이터를 융합 수집했습니다.
+
+### A. 하이엔드 뷰티 & 패션 매거진 (대중성 & 셀럽 레퍼런스)
+가장 대중적이고 파급력이 큰 글로벌 패션지의 뷰티/헤어 섹션을 수집하여, 헐리우드 셀럽들이 실제로 어떻게 연출했는지(Use-case)와 메가 트렌드를 파악합니다.
+- **출처 목록**: `Vogue`, `Allure`, `Harper's Bazaar`, `Marie Claire`, `InStyle`, `Glamour`, `Elle`, `Who What Wear`, `Byrdie`, `GQ`(남성)
+- **수집 데이터 특징**: 
+  - 최근 시상식(Grammys, Oscars)이나 패션위크(Paris Fashion Week)에 등장한 셀럽 헤어 예시 (예: Chappell Roan의 Faux Bob)
+  - 일반인도 따라 하기 쉬운 일상적인 트렌드 (예: Wavy Lob, Curtain Bangs)
+- **선정 이유**: RAG 모델 사용자가 "최근 제니퍼 로페즈가 했던 머리 뭐야?", "올봄 유행하는 머리" 등을 물어봤을 때 시대적 맥락에 맞는 정확한 이미지를 서술해주기 위함입니다.
+
+### B. 글로벌 헤어 전문가 매거진 (테크니컬 가이드 & 구조적 컷)
+퍼블릭 매거진의 "얕은 기사"를 보완하고 전문성을 높이기 위해, 실제 전 세계 미용실(Salon) 원장과 헤어 디자이너들이 보는 B2B/전문가용 잡지를 추가했습니다.
+- **출처 목록**: `American Salon`, `Beauty Launchpad` (Cut/Color/Style), `Estetica Magazine`, `HJi (Hairdressers Journal)`, `Hype Hair`(다양성 텍스처)
+- **수집 데이터 특징**:
+  - 미용 기술적인 컷의 디테일 (예: Geometric cut, Architectural precision)
+  - 컬러 배합 레시피 및 퇴색(Fading) 방지 등 딥한 지식 (예: Decolorization, Copper formulation)
+  - 하이패션 헤어 컬렉션 화보 (예: Hooker & Young의 'Echoes' Collection)
+- **선정 이유**: 사용자가 "탈색 없이 카우보이 코퍼(Cowboy Copper) 색상 내려면 어떻게 해야 해?", "둥근 얼굴형에 맞는 레이어드 컷의 질감 처리"와 같이 깊이 있는 프롬프트를 요구할 때 높은 퀄리티의 답변을 RAG 문서에서 꺼내올 수 있게 합니다.
+
+---
+
+## 2. LLM 적용 및 카테고리 분류 (Refinement Strategy)
+
+단순히 긁어온 텍스트는 제품 광고, 온라인 쇼핑몰 이동 링크, 얕은 인사이트("무조건 예쁩니다")가 섞여 있어 Vector DB(RAG) 품질을 떨어뜨립니다. 따라서 LLM(`Gemini 2.5 Flash`)을 통과시켜 데이터를 다음 4가지 카테고리로 엄격히 분류(Categorization)하고 정제했습니다.
+
+1. **`style_trend`** (스타일 트렌드)
+   - 특정 시즌 유행하는 컷, 펌, 스타일링의 고유 명사와 특징 (예: Japanese Bob, Glossy Shag)
+2. **`color_trend`** (컬러 트렌드)
+   - 유행하는 염색 기법이나 색상 혼합 트렌드 (예: Multidimensional Blonde, Cowboy Copper)
+3. **`celebrity_example`** (셀럽 예시)
+   - 특정 연예인이 선보여 화제가 된 트렌드. (예: Oprah's Bubble Ponytail, Scarlett Johansson Long Layers)
+4. **`styling_guide`** (스타일링 가이드 / 노하우)
+   - "트렌드"라기 보다는 집에서 유지/관리하는 방법, 제품 활용 팁, 드라이 방법 등. 이 데이터는 RAG에서 How-To 질문 답변용 아카이브로 기능합니다.
+
+> 🚨 **Drop(폐기) 데이터**: 특정 샴푸 광고, "아마존에서 구매하세요", 단순히 "올여름 당신을 빛내줄 머리" 같은 정보값 없는 텍스트는 이 단계에서 전부 폐기(Drop)하여 Vector DB의 밀도를 높였습니다.
+
+---
+
+## 3. RAG 최적화 JSON 스키마 (결과물 구조)
+
+모든 정제된 트렌드는 동일한 파이프라인을 거쳐 다음과 같은 구조화된 스키마로 [final_rag_trends.json](file:///Users/leebyoungjae/Desktop/Workspaces/Crawling/data/final_rag_trends.json)에 저장됩니다.
+
+```json
+{
+  "canonical_name": "chappell roan's faux bob",
+  "display_title": "Chappell Roan's Faux Bob Is Peak Weird Art School Girl",
+  "category": "celebrity_example",
+  "style_tags": ["faux bob", "hair tuck", "curly hair", "weird art school girl aesthetic"],
+  "color_tags": ["fiery hair", "auburn hair"],
+  "summary": "Chappell Roan은 파리 패션 위크에서 붉은 오번 헤어를 의상에 집어넣는 '헤어 턱(Hair tuck)' 기법으로 매력적인 포 브보(Faux Bob)를 선보였습니다. 이는 다소 기괴하면서도 예술적인 미학을 드러냅니다.",
+  "search_text": "chappell roan's faux bob, chappell roan, faux bob, hair tuck, auburn hair, fiery hair, curly hair, weird art school girl aesthetic, paris fashion week...",
+  "source": "Allure",
+  "year": "2026"
+}
+```
+
+### ✅ 스키마 핵심 포인트
+- **`canonical_name`**: 여러 기사에서 다루는 "포 보브", "짧아보이는 머리" 등의 이름을 하나의 고유명사(`faux bob`)로 정규화합니다.
+- **`tags` (style & color)**: 이미지 생성(Text-to-Image) 가이드나 메타데이터 필터링을 위해 영문 핵심 키워드 배열을 강제 추출합니다.
+- **`summary`**: LLM이 블록텍스트를 읽고, **"해당 스타일의 형태와 텍스처, 풍기는 분위기"만 3문장 이내 한국어로 요약**한 것입니다. RAG 답변 생성 시 이 부분이 직접 참조됩니다.
+- **`search_text`**: Vector DB의 Embedding 모델이 높은 유사도(Cos Similarity)를 뽑아낼 수 있도록, `원제 + 정규화이름 + 태그 + 핵심 키워드`를 나열해둔 합성 텍스트입니다. 검색 효율을 극한으로 끌어올립니다.
+
+---
+**총 투입 데이터 성과 요약**
+파이프라인 1차 크롤링 완료(약 500건 이상) ➔ 기본 정규식 및 광고 필터 등 1차 정제 통과(230건) ➔ **가이드와 트렌드가 완벽히 분리된 최종 RAG 등재용 DB(총 155건 완성)**
