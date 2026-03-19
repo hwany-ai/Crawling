@@ -92,6 +92,18 @@ python src/rag_query.py
 
 ---
 
+## 🧠 벡터화 & 저장소 스택
+
+| 구분 | 기술 | 설명 |
+|------|------|------|
+| **벡터 DB** | [ChromaDB](https://www.trychroma.com/) | 로컬 영속 저장 (`PersistentClient`), 별도 서버 불필요 |
+| **임베딩 모델** | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | 50개 이상 언어 지원, 한영 혼합 데이터에 최적화된 384차원 임베딩 |
+| **검색 방식** | L2 거리 (유클리드) | ChromaDB 기본 유사도 측정, 거리가 낮을수록 관련성 높음 |
+| **LLM (정제)** | Google Gemini 2.5 Flash | 크롤링 데이터 카테고리화 및 RAG 스키마 변환 |
+| **LLM (답변)** | OpenAI GPT-4o-mini | 검색된 컨텍스트 기반 답변 생성 + 쿼리 확장 |
+
+---
+
 ## 🔍 RAG 시스템 구조
 
 ```
